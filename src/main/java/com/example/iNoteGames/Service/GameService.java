@@ -42,7 +42,7 @@ public class GameService {
         if(game.getStatus() == GameStatus.FINISHED) {
             throw new GameCompletedException("Game is already Completed");
         }
-        if(game.getPlayer1().equals(player)) {
+        if(game.getPlayer1().getUserId().equals(player.getUserId())) {
             throw new DuplicatePlayerException("Already in the room");
         }
         game.setStatus(GameStatus.IN_PROGRESS);
