@@ -58,7 +58,11 @@ public class GameController {
 
     @CrossOrigin(originPatterns = "*")
     @PostMapping("/gameplay")
-    public ResponseEntity<Game> playGame(@RequestBody GamePlay gamePlay) throws GameCompletedException, GameNotFoundException, WaitingException {
+    public ResponseEntity<Game> playGame(@RequestHeader(value = "auth-token", required = false) String token, @RequestBody GamePlay gamePlay) throws GameCompletedException, GameNotFoundException, WaitingException, InvalidTokenException {
+        if(token == null) {
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
+        gameService.authenticateUser(token);
         Game game = gameService.playGame(gamePlay);
         log.info("Game being played : {}", gamePlay);
         String destination = "/topic/updatedGame/" + game.getGameId();
@@ -70,8 +74,11 @@ public class GameController {
 
     @CrossOrigin(originPatterns = "*")
     @PostMapping("/reset")
-    public ResponseEntity<Game> newGame(@RequestParam String gameId) throws GameStartedException, GameNotFoundException {
-        Game game = gameService.resetBoard(gameId);
+    public ResponseEntity<Game> newGame(@RequestHeader(value = "auth-token", required = false) String token, @RequestParam String gameId) throws GameStartedException, GameNotFoundException, InvalidTokenException {
+        if(token == null) {
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
+        gameService.authenticateUser(token);Game game = gameService.resetBoard(gameId);
         log.info("New Game started: {}", game);
         String destination = "/topic/resetGame/" + game.getGameId();
         simpMessagingTemplate.convertAndSend(destination, game);
