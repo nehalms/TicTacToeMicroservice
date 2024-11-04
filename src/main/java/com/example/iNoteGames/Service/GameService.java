@@ -104,7 +104,7 @@ public class GameService {
         if(game.getStatus() == GameStatus.FINISHED) {
             int player1Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.O ? 0 : 1;
             int player2Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.X ? 0 : 1;
-            String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat;;
+            String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat;
             String response = restTemplate.getForObject(url, String.class);
             System.out.println(response);
 
@@ -169,5 +169,14 @@ public class GameService {
             }
         }
         return false;
+    }
+
+    public void authenticateUser(String token) throws InvalidTokenException {
+        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
+        String response = restTemplate.getForObject(url, String.class);
+        System.out.println("Authenticated User : " + response);
+        if(response.equalsIgnoreCase("false")){
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
     }
 }
