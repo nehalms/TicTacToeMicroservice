@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javamaster.storage.GameStorage;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,6 +18,9 @@ public class GameService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private Environment environment;
 
     public Game createGame(Player player) {
         Game game = new Game();
@@ -104,9 +108,11 @@ public class GameService {
         if(game.getStatus() == GameStatus.FINISHED) {
             int player1Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.O ? 0 : 1;
             int player2Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.X ? 0 : 1;
-            String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat;
+            String apiKey = environment.getProperty("APIKEY");
+            String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat + "/" + apiKey;
+            System.out.println("Url: " + url);
             String response = restTemplate.getForObject(url, String.class);
-            System.out.println(response);
+            System.out.println("Response: " + response);
 
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -132,11 +138,14 @@ public class GameService {
         }
     }
 
-    public Game resetBoard(String gameId) throws GameNotFoundException {
+    public Game resetBoard(String gameId) throws GameNotFoundException, GameStartedException {
         if(!GameStorage.getInstance().getGames().containsKey(gameId)) {
             throw new GameNotFoundException("No Game found with the given Id");
         }
         Game game = GameStorage.getInstance().getGames().get(gameId);
+        if(game.getStatus() == GameStatus.IN_PROGRESS) {
+            throw new GameStartedException("Game In progress");
+        }
         String userIdX = game.getUserIdX();
         game.setUserIdX(game.getUserIdO());
         game.setUserIdO(userIdX);
