@@ -105,6 +105,9 @@ public class GameService {
 
     @Async
     public void updateStats(Game game) {
+        if(game.getUserIdO().equalsIgnoreCase("Bot") || game.getUserIdX().equalsIgnoreCase("Bot")) {
+            return;
+        }
         if(game.getStatus() == GameStatus.FINISHED) {
             int player1Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.O ? 0 : 1;
             int player2Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.X ? 0 : 1;
@@ -181,7 +184,8 @@ public class GameService {
     }
 
     public void authenticateUser(String token) throws InvalidTokenException {
-        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
+//        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
+        String url = "http://localhost:8900/api/game/authenticateUser/" + token;
         String response = restTemplate.getForObject(url, String.class);
         System.out.println("Authenticated User : " + response);
         if(response.equalsIgnoreCase("false")){

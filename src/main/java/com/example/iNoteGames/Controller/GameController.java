@@ -3,6 +3,7 @@ package com.example.iNoteGames.Controller;
 import com.example.iNoteGames.Exception.*;
 import com.example.iNoteGames.Model.*;
 import com.example.iNoteGames.Service.GameService;
+import com.example.iNoteGames.Service.TicTacToeBot;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ import java.time.LocalDateTime;
 public class GameController {
 
     private final GameService gameService;
+
+    @Autowired
+    public TicTacToeBot ticTacToeBot;
 
     @Autowired
     public SimpMessagingTemplate simpMessagingTemplate;
@@ -74,14 +78,65 @@ public class GameController {
 
     @CrossOrigin(originPatterns = "*")
     @PostMapping("/reset")
-    public ResponseEntity<Game> newGame(@RequestHeader(value = "auth-token", required = false) String token, @RequestParam String gameId) throws GameStartedException, GameNotFoundException, InvalidTokenException {
+    public ResponseEntity<Game> newGame(@RequestHeader(value = "auth-token", required = false) String token, @RequestParam String gameId) throws GameStartedException, GameNotFoundException, InvalidTokenException, GameCompletedException, WaitingException {
         if(token == null) {
             throw new InvalidTokenException("Authenticate using valid token");
         }
-        gameService.authenticateUser(token);Game game = gameService.resetBoard(gameId);
+        gameService.authenticateUser(token);
+        Game game = gameService.resetBoard(gameId);
+
+        if((game.getTurn() == TicToe.X && game.getUserIdX().equalsIgnoreCase("Bot")) || (game.getTurn() == TicToe.O && game.getUserIdO().equalsIgnoreCase("Bot"))) {
+            int[] res = ticTacToeBot.getBestMove(game.getBoard(), game.getTurn().getValue());
+            GamePlay gamePlay1 = new GamePlay(game.getTurn(), res[0], res[1], game.getGameId());
+            game = gameService.playGame(gamePlay1);
+        }
         log.info("New Game started: {}", game);
         String destination = "/topic/resetGame/" + game.getGameId();
         simpMessagingTemplate.convertAndSend(destination, game);
+        return ResponseEntity.ok(game);
+    }
+
+    @CrossOrigin(originPatterns = "*")
+    @PostMapping("/create/bot")
+    public ResponseEntity<Game> vsBot(@RequestBody Player player, @RequestHeader(value = "auth-token", required = false) String token) throws InvalidTokenException, GameStartedException, GameCompletedException, DuplicatePlayerException, GameNotFoundException, WaitingException {
+        if(token == null) {
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
+        gameService.authenticateUser(token);
+        Player bot = new Player("Bot", "AiBot", 0);
+        Game game1 = gameService.createGame(bot);
+        Game game = gameService.joinGame(player, game1.getGameId());
+        log.info("Game Created(Player 1): {}", game);
+
+        if((game.getTurn() == TicToe.X && game.getUserIdX().equalsIgnoreCase("Bot")) || (game.getTurn() == TicToe.O && game.getUserIdO().equalsIgnoreCase("Bot"))) {
+            int[] res = ticTacToeBot.getBestMove(game.getBoard(), game.getTurn().getValue());
+            GamePlay gamePlay = new GamePlay(game.getTurn(), res[0], res[1], game.getGameId());
+            log.info("Game being played : {}", gamePlay);
+            game = gameService.playGame(gamePlay);
+        }
+        return ResponseEntity.ok(game);
+    }
+
+    @CrossOrigin(originPatterns = "*")
+    @PostMapping("/gameplay/bot")
+    public ResponseEntity<Game> vsBot(@RequestHeader(value = "auth-token", required = false) String token, @RequestBody GamePlay gamePlay) throws GameCompletedException, GameNotFoundException, WaitingException, InvalidTokenException {
+        if(token == null) {
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
+        gameService.authenticateUser(token);
+        Game game = gameService.playGame(gamePlay);
+        log.info("Game being played : {}", gamePlay);
+
+        if( ((game.getTurn() == TicToe.X && game.getUserIdX().equalsIgnoreCase("Bot")) || (game.getTurn() == TicToe.O && game.getUserIdO().equalsIgnoreCase("Bot"))) && game.getStatus() == GameStatus.IN_PROGRESS) {
+            int[] res = ticTacToeBot.getBestMove(game.getBoard(), game.getTurn().getValue());
+            GamePlay gamePlay1 = new GamePlay(game.getTurn(), res[0], res[1], game.getGameId());
+            log.info("Game being played : {}", gamePlay1);
+            game = gameService.playGame(gamePlay1);
+        }
+
+        String destination = "/topic/updatedGame/" + game.getGameId();
+        simpMessagingTemplate.convertAndSend(destination, game);
+        gameService.updateStats(game);
         return ResponseEntity.ok(game);
     }
 
