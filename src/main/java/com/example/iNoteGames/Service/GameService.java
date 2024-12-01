@@ -184,8 +184,7 @@ public class GameService {
     }
 
     public void authenticateUser(String token) throws InvalidTokenException {
-//        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
-        String url = "http://localhost:8900/api/game/authenticateUser/" + token;
+        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
         String response = restTemplate.getForObject(url, String.class);
         System.out.println("Authenticated User : " + response);
         if(response.equalsIgnoreCase("false")){
