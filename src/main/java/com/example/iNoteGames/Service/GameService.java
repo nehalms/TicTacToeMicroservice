@@ -57,6 +57,21 @@ public class GameService {
         return game;
     }
 
+    public Game getGame(Player player, String gameId) throws GameNotFoundException, DuplicatePlayerException, GameCompletedException {
+        if(!GameStorage.getInstance().getGames().containsKey(gameId)) {
+            throw new GameNotFoundException("No Game found with the given Id");
+        }
+        Game game = GameStorage.getInstance().getGames().get(gameId);
+        if(game.getStatus() == GameStatus.FINISHED) {
+            throw new GameCompletedException("Game is already Completed");
+        }
+        if( (game.getPlayer1() != null && game.getPlayer1().equals(player)) || (game.getPlayer2() != null && game.getPlayer2().equals(player)) ) {
+            return game;
+        } else {
+            throw new DuplicatePlayerException("Join the room");
+        }
+    }
+
     public Game playGame(GamePlay gamePlay) throws GameNotFoundException, GameCompletedException, WaitingException {
         if(!GameStorage.getInstance().getGames().containsKey(gamePlay.getGameId())) {
             throw new GameNotFoundException("No Game found with the given Id");

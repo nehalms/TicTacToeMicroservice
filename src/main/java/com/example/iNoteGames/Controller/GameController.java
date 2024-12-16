@@ -61,6 +61,18 @@ public class GameController {
     }
 
     @CrossOrigin(originPatterns = "*")
+    @PostMapping("/getStatus")
+    public ResponseEntity<Game> getGame(@RequestBody Player player, @RequestHeader(value = "auth-token", required = false) String token, @RequestParam String gameId) throws InvalidTokenException, DuplicatePlayerException, GameNotFoundException, GameCompletedException {
+        if(token == null) {
+            throw new InvalidTokenException("Authenticate using valid token");
+        }
+        gameService.authenticateUser(token);
+        Game game = gameService.getGame(player, gameId);
+        log.info("Game Status requested: {}", game);
+        return ResponseEntity.ok(game);
+    }
+
+    @CrossOrigin(originPatterns = "*")
     @PostMapping("/gameplay")
     public ResponseEntity<Game> playGame(@RequestHeader(value = "auth-token", required = false) String token, @RequestBody GamePlay gamePlay) throws GameCompletedException, GameNotFoundException, WaitingException, InvalidTokenException {
         if(token == null) {
