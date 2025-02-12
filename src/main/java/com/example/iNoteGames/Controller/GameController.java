@@ -31,6 +31,7 @@ public class GameController {
     @CrossOrigin(originPatterns = "*")
     @GetMapping("/test")
     public ResponseEntity<String> test() {
+        log.info("Server Status: Running");
         return new ResponseEntity<>("Hello render", HttpStatus.OK);
     }
 
