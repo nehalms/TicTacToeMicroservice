@@ -127,7 +127,7 @@ public class GameService {
             int player1Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.O ? 0 : 1;
             int player2Stat = game.getWinner() == TicToe.DRAW || game.getWinner() == TicToe.X ? 0 : 1;
             String apiKey = environment.getProperty("APIKEY");
-            String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat + "/" + apiKey;
+            String url = environment.getProperty("Backend_URL") + "/game/tttsave/" + game.getUserIdX() + "/" + player1Stat + "/" + game.getUserIdO() + "/" + player2Stat + "/" + apiKey;
             System.out.println("Url: " + url);
             String response = restTemplate.getForObject(url, String.class);
             System.out.println("Response: " + response);
@@ -199,7 +199,8 @@ public class GameService {
     }
 
     public void authenticateUser(String token) throws InvalidTokenException {
-        String url = "https://inotebookapi-nehals-projects-e27269ee.vercel.app/api/game/authenticateUser/" + token;
+        String apiKey = environment.getProperty("APIKEY");
+        String url = environment.getProperty("Backend_URL") + "/game/authenticateUser/" + token + "/" + apiKey;
         String response = restTemplate.getForObject(url, String.class);
         System.out.println("Authenticated User : " + response);
         if(response.equalsIgnoreCase("false")){
